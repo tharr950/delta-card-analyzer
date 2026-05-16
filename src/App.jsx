@@ -1,481 +1,984 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
+/* ──────────────────────── CARD DATA ──────────────────────── */
 const CARDS = {
-  gold: {
-    name: "Delta SkyMiles® Gold",
-    shortName: "Gold",
-    annualFee: 150,
-    color: "#B8860B",
-    colorLight: "#D4A830",
-    colorGlow: "rgba(184,134,11,0.15)",
-    mqd: { headstart: 0, boostRate: 0, boostLabel: null },
-    skyClub: false,
-    centurion: false,
-    companionCert: false,
-    earnRates: { delta: 2, restaurants: 2, supermarkets: 2, other: 1 },
-    benefits: [
-      { name: "Free checked bag", description: "First bag free for you + up to 8 companions", perUse: 45, key: "checkedBags" },
-      { name: "Delta flight credit", description: "$200 credit after $10K spend in calendar year", fixed: 200, key: "flightCredit", conditional: "Requires $10K annual spend" },
-      { name: "Delta Stays credit", description: "Up to $100/year on prepaid hotels via Delta Stays", fixed: 100, key: "staysCredit" },
-      { name: "TakeOff 15", description: "15% off award flights booked with miles", percentage: true, key: "takeoff15" },
-      { name: "Priority boarding", description: "Zone 5 priority boarding", fixed: 0, key: "priorityBoarding" },
-      { name: "Uber One credit", description: "Up to $9.99/mo for 6 months", fixed: 60, key: "uberOne" },
-    ],
+  reserve: {
+    name: "Delta SkyMiles® Reserve",
+    short: "Reserve",
+    annualFee: 650,
+    firstYearFee: 650,
+    signupBonus: { miles: 100000, spend: 5000, months: 6 },
+    color: "#1B3A5C",
+    accent: "#4A90D9",
+    gradient: "linear-gradient(135deg, #1B3A5C 0%, #2C5F8A 50%, #1B3A5C 100%)",
+    mqd: { headstart: 2500, boostPer: 10 },
+    perks: {
+      skyClub: { visits: 15, unlimitedAt: 75000 },
+      centurion: true,
+      companionCert: true,
+      checkedBag: true,
+      resyCredit: { monthly: 20, annual: 240 },
+      rideshareCredit: { monthly: 10, annual: 120 },
+      staysCredit: 100,
+      uberOne: { monthly: 9.99, months: 12, annual: 120 },
+      globalEntry: 30,
+      takeoff15: true,
+      upgradePriority: true,
+    },
   },
   platinum: {
     name: "Delta SkyMiles® Platinum",
-    shortName: "Platinum",
+    short: "Platinum",
     annualFee: 350,
-    color: "#7B68AE",
-    colorLight: "#9B8ACE",
-    colorGlow: "rgba(123,104,174,0.15)",
-    mqd: { headstart: 2500, boostRate: 20, boostLabel: "$1 MQD per $20 spent" },
-    skyClub: false,
-    centurion: false,
-    companionCert: true,
-    earnRates: { delta: 3, hotels: 3, restaurants: 2, supermarkets: 2, other: 1 },
-    benefits: [
-      { name: "Companion certificate", description: "Annual domestic round-trip Main Cabin companion fare", perUse: 0, key: "companionCert", requiresInput: true },
-      { name: "Free checked bag", description: "First bag free for you + up to 8 companions", perUse: 45, key: "checkedBags" },
-      { name: "Resy credit", description: "Up to $10/mo ($120/year) at U.S. Resy restaurants", fixed: 120, key: "resyCredit" },
-      { name: "Rideshare credit", description: "Up to $10/mo ($120/year) on U.S. rideshare", fixed: 120, key: "rideshareCredit" },
-      { name: "Delta Stays credit", description: "Up to $150/year on prepaid hotels via Delta Stays", fixed: 150, key: "staysCredit" },
-      { name: "TakeOff 15", description: "15% off award flights booked with miles", percentage: true, key: "takeoff15" },
-      { name: "MQD Headstart", description: "$2,500 MQDs deposited annually", fixed: 0, key: "mqdHeadstart", statusBenefit: true },
-      { name: "Uber One credit", description: "Up to $9.99/mo for 12 months", fixed: 120, key: "uberOne" },
-      { name: "Global Entry / TSA PreCheck credit", description: "Up to $120 every 4 years ($30/yr value)", fixed: 30, key: "globalEntry" },
-    ],
+    firstYearFee: 350,
+    signupBonus: { miles: 90000, spend: 3000, months: 6 },
+    color: "#6B5B95",
+    accent: "#9B8ACE",
+    gradient: "linear-gradient(135deg, #6B5B95 0%, #8B7BB5 50%, #6B5B95 100%)",
+    mqd: { headstart: 2500, boostPer: 20 },
+    perks: {
+      skyClub: false,
+      centurion: false,
+      companionCert: true,
+      checkedBag: true,
+      resyCredit: { monthly: 10, annual: 120 },
+      rideshareCredit: { monthly: 10, annual: 120 },
+      staysCredit: 150,
+      uberOne: { monthly: 9.99, months: 12, annual: 120 },
+      globalEntry: 30,
+      takeoff15: true,
+      upgradePriority: false,
+    },
   },
-  reserve: {
-    name: "Delta SkyMiles® Reserve",
-    shortName: "Reserve",
-    annualFee: 650,
-    color: "#1a3a5c",
-    colorLight: "#2a5a8c",
-    colorGlow: "rgba(26,58,92,0.15)",
-    mqd: { headstart: 2500, boostRate: 10, boostLabel: "$1 MQD per $10 spent" },
-    skyClub: true,
-    centurion: true,
-    companionCert: true,
-    earnRates: { delta: 3, other: 1 },
-    earnNote: "Simpler earning structure: 3X Delta, 1X everything else",
-    benefits: [
-      { name: "Sky Club access", description: "15 visits/year when flying Delta (unlimited at $75K spend)", perUse: 0, key: "skyClub", requiresInput: true },
-      { name: "Centurion Lounge access", description: "Access when flying Delta booked on this card", perUse: 0, key: "centurion", requiresInput: true },
-      { name: "Companion certificate", description: "Annual domestic round-trip Main Cabin companion fare", perUse: 0, key: "companionCert", requiresInput: true },
-      { name: "Free checked bag", description: "First bag free for you + up to 8 companions", perUse: 45, key: "checkedBags" },
-      { name: "Resy credit", description: "Up to $20/mo ($240/year) at U.S. Resy restaurants", fixed: 240, key: "resyCredit" },
-      { name: "Rideshare credit", description: "Up to $10/mo ($120/year) on U.S. rideshare", fixed: 120, key: "rideshareCredit" },
-      { name: "Delta Stays credit", description: "$100/year on prepaid hotels via Delta Stays", fixed: 100, key: "staysCredit" },
-      { name: "TakeOff 15", description: "15% off award flights booked with miles", percentage: true, key: "takeoff15" },
-      { name: "MQD Headstart", description: "$2,500 MQDs deposited annually", fixed: 0, key: "mqdHeadstart", statusBenefit: true },
-      { name: "Upgrade priority", description: "Priority over others in same Medallion tier", fixed: 0, key: "upgradePriority", statusBenefit: true },
-      { name: "Uber One credit", description: "Up to $9.99/mo for 12 months", fixed: 120, key: "uberOne" },
-      { name: "Global Entry / TSA PreCheck credit", description: "Up to $120 every 4 years ($30/yr value)", fixed: 30, key: "globalEntry" },
-    ],
+  gold: {
+    name: "Delta SkyMiles® Gold",
+    short: "Gold",
+    annualFee: 150,
+    firstYearFee: 0,
+    signupBonus: { miles: 80000, spend: 2000, months: 6 },
+    color: "#8B6914",
+    accent: "#D4A830",
+    gradient: "linear-gradient(135deg, #8B6914 0%, #C49B20 50%, #8B6914 100%)",
+    mqd: { headstart: 0, boostPer: 0 },
+    perks: {
+      skyClub: false,
+      centurion: false,
+      companionCert: false,
+      checkedBag: true,
+      resyCredit: null,
+      rideshareCredit: null,
+      staysCredit: 100,
+      uberOne: { monthly: 9.99, months: 6, annual: 60 },
+      globalEntry: null,
+      takeoff15: true,
+      upgradePriority: false,
+      flightCredit: { amount: 200, spendReq: 10000 },
+    },
   },
 };
 
-const MILE_VALUE = 0.012;
+const MILE_VALUE = 0.01;
 
-function formatDollar(n) {
-  if (n === undefined || n === null || isNaN(n)) return "$0";
-  return (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString();
-}
+/* ──────────────────────── ALL US AIRPORTS WITH SKY CLUBS ──────────────────────── */
+const ALL_AIRPORTS = [
+  { code: "ANC", city: "Anchorage", state: "AK", skyClub: true, centurion: false },
+  { code: "ATL", city: "Atlanta", state: "GA", skyClub: true, skyClubCount: 7, centurion: false },
+  { code: "AUS", city: "Austin", state: "TX", skyClub: true, centurion: false },
+  { code: "BOS", city: "Boston", state: "MA", skyClub: true, centurion: false },
+  { code: "CLT", city: "Charlotte", state: "NC", skyClub: true, centurion: true },
+  { code: "ORD", city: "Chicago", state: "IL", skyClub: true, skyClubCount: 2, centurion: true },
+  { code: "CVG", city: "Cincinnati", state: "OH", skyClub: true, centurion: false },
+  { code: "DFW", city: "Dallas-Fort Worth", state: "TX", skyClub: true, centurion: true },
+  { code: "DEN", city: "Denver", state: "CO", skyClub: true, centurion: true },
+  { code: "DTW", city: "Detroit", state: "MI", skyClub: true, skyClubCount: 3, centurion: false },
+  { code: "FLL", city: "Fort Lauderdale", state: "FL", skyClub: true, centurion: false },
+  { code: "HNL", city: "Honolulu", state: "HI", skyClub: true, centurion: true },
+  { code: "IAH", city: "Houston", state: "TX", skyClub: false, centurion: true },
+  { code: "IND", city: "Indianapolis", state: "IN", skyClub: true, centurion: false },
+  { code: "JAX", city: "Jacksonville", state: "FL", skyClub: true, centurion: false },
+  { code: "MCI", city: "Kansas City", state: "MO", skyClub: true, centurion: false },
+  { code: "LAS", city: "Las Vegas", state: "NV", skyClub: true, centurion: true },
+  { code: "LAX", city: "Los Angeles", state: "CA", skyClub: true, skyClubCount: 2, centurion: true },
+  { code: "MEM", city: "Memphis", state: "TN", skyClub: true, centurion: false },
+  { code: "MIA", city: "Miami", state: "FL", skyClub: true, centurion: true },
+  { code: "MKE", city: "Milwaukee", state: "WI", skyClub: true, centurion: false },
+  { code: "MSP", city: "Minneapolis", state: "MN", skyClub: true, skyClubCount: 3, centurion: false },
+  { code: "BNA", city: "Nashville", state: "TN", skyClub: true, centurion: false },
+  { code: "MSY", city: "New Orleans", state: "LA", skyClub: true, centurion: false },
+  { code: "JFK", city: "New York JFK", state: "NY", skyClub: true, skyClubCount: 3, centurion: true },
+  { code: "LGA", city: "New York LaGuardia", state: "NY", skyClub: true, centurion: false },
+  { code: "EWR", city: "Newark", state: "NJ", skyClub: true, centurion: false },
+  { code: "MCO", city: "Orlando", state: "FL", skyClub: true, centurion: false },
+  { code: "PBI", city: "Palm Beach", state: "FL", skyClub: true, centurion: false },
+  { code: "PHL", city: "Philadelphia", state: "PA", skyClub: true, centurion: true },
+  { code: "PHX", city: "Phoenix", state: "AZ", skyClub: true, centurion: true },
+  { code: "PIT", city: "Pittsburgh", state: "PA", skyClub: true, centurion: false },
+  { code: "PDX", city: "Portland", state: "OR", skyClub: true, centurion: false },
+  { code: "RDU", city: "Raleigh-Durham", state: "NC", skyClub: true, centurion: false },
+  { code: "SLC", city: "Salt Lake City", state: "UT", skyClub: true, skyClubCount: 2, centurion: false },
+  { code: "SAN", city: "San Diego", state: "CA", skyClub: true, centurion: false },
+  { code: "SFO", city: "San Francisco", state: "CA", skyClub: true, centurion: true },
+  { code: "SEA", city: "Seattle", state: "WA", skyClub: true, skyClubCount: 2, centurion: true },
+  { code: "STL", city: "St. Louis", state: "MO", skyClub: true, centurion: false },
+  { code: "TPA", city: "Tampa", state: "FL", skyClub: true, centurion: false },
+  { code: "DCA", city: "Washington Reagan", state: "VA", skyClub: true, centurion: false },
+  // Common airports WITHOUT Sky Clubs (so users can still select them)
+  { code: "BWI", city: "Baltimore", state: "MD", skyClub: false, centurion: false },
+  { code: "BUF", city: "Buffalo", state: "NY", skyClub: false, centurion: false },
+  { code: "CLE", city: "Cleveland", state: "OH", skyClub: false, centurion: false },
+  { code: "CMH", city: "Columbus", state: "OH", skyClub: false, centurion: false },
+  { code: "DAL", city: "Dallas Love Field", state: "TX", skyClub: false, centurion: false },
+  { code: "IAD", city: "Washington Dulles", state: "VA", skyClub: false, centurion: false },
+  { code: "MDW", city: "Chicago Midway", state: "IL", skyClub: false, centurion: false },
+  { code: "OAK", city: "Oakland", state: "CA", skyClub: false, centurion: false },
+  { code: "PVD", city: "Providence", state: "RI", skyClub: false, centurion: false },
+  { code: "RIC", city: "Richmond", state: "VA", skyClub: false, centurion: false },
+  { code: "RSW", city: "Fort Myers", state: "FL", skyClub: false, centurion: false },
+  { code: "SAT", city: "San Antonio", state: "TX", skyClub: false, centurion: false },
+  { code: "SJC", city: "San Jose", state: "CA", skyClub: false, centurion: false },
+  { code: "SMF", city: "Sacramento", state: "CA", skyClub: false, centurion: false },
+  { code: "SNA", city: "Santa Ana / Orange County", state: "CA", skyClub: false, centurion: false },
+  { code: "MHT", city: "Manchester", state: "NH", skyClub: false, centurion: false },
+  { code: "BDL", city: "Hartford / Bradley", state: "CT", skyClub: false, centurion: false },
+  { code: "PWM", city: "Portland", state: "ME", skyClub: false, centurion: false },
+  { code: "BTV", city: "Burlington", state: "VT", skyClub: false, centurion: false },
+  { code: "ACK", city: "Nantucket", state: "MA", skyClub: false, centurion: false },
+  { code: "MVY", city: "Martha's Vineyard", state: "MA", skyClub: false, centurion: false },
+];
 
-function Slider({ label, sublabel, value, onChange, min, max, step, prefix, suffix }) {
+const fmt = (n) => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n)).toLocaleString();
+const fmtK = (n) => (n >= 1000 ? (n / 1000).toFixed(0) + "K" : n.toString());
+
+/* ──────────────────────── AIRPORT SEARCH COMPONENT ──────────────────────── */
+function AirportSearch({ selected, onSelect, onRemove, max, accent }) {
+  const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+
+  const results = query.length >= 1
+    ? ALL_AIRPORTS.filter(
+        (a) =>
+          !selected.find((s) => s.code === a.code) &&
+          (a.code.toLowerCase().includes(query.toLowerCase()) ||
+            a.city.toLowerCase().includes(query.toLowerCase()) ||
+            a.state.toLowerCase().includes(query.toLowerCase()))
+      ).slice(0, 6)
+    : [];
+
   return (
-    <div style={{ marginBottom: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 500, color: "#e8e4df" }}>{label}</span>
-        <span style={{ fontSize: "15px", fontWeight: 600, color: "#fff", fontFamily: "'IBM Plex Mono', monospace" }}>
-          {prefix}{typeof value === "number" ? value.toLocaleString() : value}{suffix}
-        </span>
-      </div>
-      {sublabel && <div style={{ fontSize: "11px", color: "#8a8278", marginBottom: "8px" }}>{sublabel}</div>}
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: "100%", accentColor: "#D4A830" }}
-      />
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#6a6258", marginTop: "2px" }}>
-        <span>{prefix}{min.toLocaleString()}{suffix}</span>
-        <span>{prefix}{max.toLocaleString()}{suffix}</span>
+    <div>
+      {/* Selected airports */}
+      {selected.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
+          {selected.map((a) => (
+            <div key={a.code} style={{
+              display: "flex", alignItems: "center", gap: "8px",
+              padding: "8px 12px", borderRadius: "8px",
+              background: "#1A1815", border: "1px solid #2A2620",
+            }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#fff", fontFamily: "'IBM Plex Mono', monospace" }}>{a.code}</span>
+              <span style={{ fontSize: "12px", color: "#8A8278" }}>{a.city}</span>
+              <div style={{ display: "flex", gap: "4px", marginLeft: "4px" }}>
+                {a.skyClub && <span style={{ fontSize: "8px", padding: "2px 5px", borderRadius: "3px", background: "rgba(74,222,128,0.12)", color: "#4ade80", fontFamily: "'IBM Plex Mono', monospace" }}>SC</span>}
+                {a.centurion && <span style={{ fontSize: "8px", padding: "2px 5px", borderRadius: "3px", background: "rgba(147,130,220,0.15)", color: "#9B8ACE", fontFamily: "'IBM Plex Mono', monospace" }}>CL</span>}
+                {!a.skyClub && !a.centurion && <span style={{ fontSize: "8px", padding: "2px 5px", borderRadius: "3px", background: "rgba(248,113,113,0.12)", color: "#f87171", fontFamily: "'IBM Plex Mono', monospace" }}>No lounge</span>}
+              </div>
+              <button onClick={() => onRemove(a.code)} style={{ background: "none", border: "none", color: "#6A6258", fontSize: "14px", cursor: "pointer", padding: "0 0 0 4px", lineHeight: 1 }}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Search input */}
+      {selected.length < max && (
+        <div style={{ position: "relative" }}>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setTimeout(() => setFocused(false), 200)}
+            placeholder="Search by city or airport code..."
+            style={{
+              width: "100%", padding: "12px 16px", borderRadius: "10px",
+              border: `1.5px solid ${focused ? accent : "#2A2620"}`,
+              background: "#151310", color: "#E8E4DF", fontSize: "14px",
+              fontFamily: "'DM Sans', sans-serif", outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.2s",
+            }}
+          />
+
+          {/* Dropdown */}
+          {focused && results.length > 0 && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+              background: "#1A1815", border: "1px solid #2A2620", borderRadius: "10px",
+              overflow: "hidden", zIndex: 10, maxHeight: "240px", overflowY: "auto",
+            }}>
+              {results.map((a) => (
+                <button
+                  key={a.code}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { onSelect(a); setQuery(""); }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    width: "100%", padding: "10px 14px", border: "none",
+                    background: "transparent", cursor: "pointer", textAlign: "left",
+                    borderBottom: "1px solid #1F1C18",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#222018")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", minWidth: "36px" }}>{a.code}</span>
+                    <span style={{ fontSize: "13px", color: "#C8C4BF" }}>{a.city}, {a.state}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    {a.skyClub && <span style={{ fontSize: "8px", padding: "2px 5px", borderRadius: "3px", background: "rgba(74,222,128,0.12)", color: "#4ade80", fontFamily: "'IBM Plex Mono', monospace" }}>Sky Club</span>}
+                    {a.centurion && <span style={{ fontSize: "8px", padding: "2px 5px", borderRadius: "3px", background: "rgba(147,130,220,0.15)", color: "#9B8ACE", fontFamily: "'IBM Plex Mono', monospace" }}>Centurion</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Legend */}
+      <div style={{ display: "flex", gap: "12px", marginTop: "8px", fontSize: "10px", color: "#6A6258", fontFamily: "'IBM Plex Mono', monospace" }}>
+        <span><span style={{ color: "#4ade80" }}>SC</span> = Sky Club</span>
+        <span><span style={{ color: "#9B8ACE" }}>CL</span> = Centurion Lounge</span>
       </div>
     </div>
   );
 }
 
-function Toggle({ label, sublabel, value, onChange }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-      <div>
-        <div style={{ fontSize: "13px", fontWeight: 500, color: "#e8e4df" }}>{label}</div>
-        {sublabel && <div style={{ fontSize: "11px", color: "#8a8278", marginTop: "2px" }}>{sublabel}</div>}
-      </div>
-      <button
-        onClick={() => onChange(!value)}
-        style={{
-          width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer",
-          background: value ? "#D4A830" : "#3a3630",
-          position: "relative", transition: "background 0.2s",
-        }}
-      >
-        <div style={{
-          width: "18px", height: "18px", borderRadius: "9px", background: "#fff",
-          position: "absolute", top: "3px",
-          left: value ? "23px" : "3px",
-          transition: "left 0.2s",
-        }} />
-      </button>
-    </div>
-  );
-}
-
+/* ──────────────────────── MAIN APP ──────────────────────── */
 export default function App() {
-  const [selectedCard, setSelectedCard] = useState("reserve");
-  const [inputs, setInputs] = useState({
-    deltaFlights: 6,
-    checkedBagTrips: 4,
-    companionsPerTrip: 1,
-    annualDeltaSpend: 3000,
-    annualOtherSpend: 24000,
-    annualRestaurantSpend: 3000,
-    annualSupermarketSpend: 6000,
-    skyClubVisits: 8,
-    centurionVisits: 2,
-    companionCertValue: 400,
-    usesResyCredit: true,
-    usesRideshareCredit: true,
-    usesStaysCredit: true,
-    usesUberOne: true,
-    usesFlightCredit: false,
-    caresAboutStatus: true,
-  });
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
-  const [activeSection, setActiveSection] = useState("travel");
+  const [animating, setAnimating] = useState(false);
+  const [userCity, setUserCity] = useState("");
+  const containerRef = useRef(null);
 
-  const update = (key, val) => setInputs((p) => ({ ...p, [key]: val }));
+  // Try to get user's city from geolocation
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`);
+          const data = await r.json();
+          const city = data.address?.city || data.address?.town || data.address?.village || "";
+          if (city) setUserCity(city);
+        } catch (e) { /* silent */ }
+      }, () => {});
+    }
+  }, []);
 
-  const card = CARDS[selectedCard];
+  const card = selectedCard ? CARDS[selectedCard] : null;
 
-  function calculateValue() {
-    let totalValue = 0;
-    const breakdown = [];
+  const goNext = () => {
+    setAnimating(true);
+    setTimeout(() => {
+      setStep((s) => s + 1);
+      setAnimating(false);
+      containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }, 200);
+  };
+  const goBack = () => {
+    setAnimating(true);
+    setTimeout(() => {
+      if (step === 0) {
+        setSelectedCard(null);
+        setAnswers({});
+        setShowResults(false);
+      } else {
+        setStep((s) => s - 1);
+      }
+      setAnimating(false);
+    }, 200);
+  };
+  const answer = (key, val) => setAnswers((p) => ({ ...p, [key]: val }));
 
-    // Checked bag savings
-    const bagSavings = inputs.checkedBagTrips * 2 * 45 * (1 + Math.min(inputs.companionsPerTrip, 8));
-    if (bagSavings > 0) {
-      breakdown.push({ name: "Free checked bags", value: bagSavings, detail: `${inputs.checkedBagTrips} round-trips × ${1 + Math.min(inputs.companionsPerTrip, 8)} people × $45/bag × 2` });
-      totalValue += bagSavings;
+  /* ──────────────── BUILD QUESTIONS ──────────────── */
+  const getQuestions = () => {
+    if (!card) return [];
+    const q = [];
+
+    // ── TRAVEL ──
+    q.push({
+      id: "flights", section: "Your Travel",
+      question: "How many round-trip Delta flights do you take per year?",
+      sub: "Include personal and business travel",
+      type: "choice",
+      options: [
+        { label: "1–3 flights", value: 2 },
+        { label: "4–8 flights", value: 6 },
+        { label: "9–15 flights", value: 12 },
+        { label: "16+ flights", value: 20 },
+      ],
+    });
+
+    q.push({
+      id: "checkedBags", section: "Your Travel",
+      question: "Do you typically check a bag when you fly?",
+      sub: "This card gives you and up to 8 companions a free first checked bag ($45 value each way)",
+      type: "choice",
+      options: [
+        { label: "Always", value: "always" },
+        { label: "Sometimes", value: "sometimes" },
+        { label: "Never — carry-on only", value: "never" },
+      ],
+    });
+
+    q.push({
+      id: "companions", section: "Your Travel",
+      question: "How many people typically travel with you on the same reservation?",
+      sub: "They get free checked bags too",
+      type: "choice",
+      options: [
+        { label: "Just me", value: 0 },
+        { label: "1 companion", value: 1 },
+        { label: "2–3", value: 2.5 },
+        { label: "4+", value: 4 },
+      ],
+    });
+
+    // ── AIRPORTS (for lounge cards) ──
+    if (card.perks.skyClub) {
+      q.push({
+        id: "airports", section: "Your Airports",
+        question: "Which airports do you fly through most?",
+        sub: "Add your home airport plus any you connect through or fly to regularly. We'll check which ones have lounges.",
+        type: "airports",
+      });
+
+      q.push({
+        id: "loungeFrequency", section: "Lounge Access",
+        question: "When a Sky Club is available, how often would you use it?",
+        sub: "The Reserve gives you 15 Sky Club visits per year when flying Delta",
+        type: "choice",
+        showIf: () => {
+          const airports = answers.airports || [];
+          return airports.some((a) => a.skyClub);
+        },
+        options: [
+          { label: "Every time — it's a must", value: "every" },
+          { label: "Most of the time", value: "most" },
+          { label: "When I have time before my flight", value: "sometimes" },
+          { label: "Rarely", value: "rarely" },
+        ],
+      });
+
+      q.push({
+        id: "noLoungeNote", section: "Lounge Access",
+        question: "None of your airports have a Delta Sky Club",
+        sub: "Sky Club access is one of the Reserve's biggest perks. Since you don't fly through airports with Sky Clubs, this benefit won't add much value for you. You may want to consider the Platinum or Gold card instead.",
+        type: "info",
+        showIf: () => {
+          const airports = answers.airports || [];
+          return airports.length > 0 && !airports.some((a) => a.skyClub);
+        },
+      });
     }
 
-    // Miles earned
-    const deltaMiles = inputs.annualDeltaSpend * (card.earnRates.delta || 1);
-    const restaurantMiles = inputs.annualRestaurantSpend * (card.earnRates.restaurants || card.earnRates.other || 1);
-    const supermarketMiles = inputs.annualSupermarketSpend * (card.earnRates.supermarkets || card.earnRates.other || 1);
-    const otherMiles = inputs.annualOtherSpend * (card.earnRates.other || 1);
-    const totalMiles = deltaMiles + restaurantMiles + supermarketMiles + otherMiles;
-    const milesValue = totalMiles * MILE_VALUE;
-    breakdown.push({ name: "SkyMiles earned", value: milesValue, detail: `${totalMiles.toLocaleString()} miles × 1.2¢ each`, miles: totalMiles });
-    totalValue += milesValue;
-
-    // Statement credits
-    if (card.benefits.find((b) => b.key === "resyCredit") && inputs.usesResyCredit) {
-      const v = card.benefits.find((b) => b.key === "resyCredit").fixed;
-      breakdown.push({ name: "Resy dining credit", value: v, detail: "Monthly statement credits" });
-      totalValue += v;
-    }
-    if (card.benefits.find((b) => b.key === "rideshareCredit") && inputs.usesRideshareCredit) {
-      const v = card.benefits.find((b) => b.key === "rideshareCredit").fixed;
-      breakdown.push({ name: "Rideshare credit", value: v, detail: "Monthly statement credits" });
-      totalValue += v;
-    }
-    if (card.benefits.find((b) => b.key === "staysCredit") && inputs.usesStaysCredit) {
-      const v = card.benefits.find((b) => b.key === "staysCredit").fixed;
-      breakdown.push({ name: "Delta Stays credit", value: v, detail: "Annual statement credit" });
-      totalValue += v;
-    }
-    if (card.benefits.find((b) => b.key === "uberOne") && inputs.usesUberOne) {
-      const v = card.benefits.find((b) => b.key === "uberOne").fixed;
-      breakdown.push({ name: "Uber One credit", value: v, detail: "Monthly membership credit" });
-      totalValue += v;
-    }
-    if (card.benefits.find((b) => b.key === "flightCredit") && inputs.usesFlightCredit) {
-      breakdown.push({ name: "Delta flight credit", value: 200, detail: "Requires $10K annual card spend" });
-      totalValue += 200;
-    }
-    if (card.benefits.find((b) => b.key === "globalEntry")) {
-      const v = card.benefits.find((b) => b.key === "globalEntry").fixed;
-      breakdown.push({ name: "Global Entry/TSA PreCheck", value: v, detail: "~$30/year amortized" });
-      totalValue += v;
+    // Centurion question
+    if (card.perks.centurion) {
+      q.push({
+        id: "centurionUse", section: "Lounge Access",
+        question: (() => {
+          const airports = answers.airports || [];
+          const withCenturion = airports.filter((a) => a.centurion);
+          if (withCenturion.length > 0) {
+            return `You also get Centurion Lounge access! ${withCenturion.map((a) => a.code).join(", ")} ${withCenturion.length === 1 ? "has" : "have"} one. Would you use it?`;
+          }
+          return "The Reserve includes Centurion Lounge access. Would you use it at other airports?";
+        })(),
+        sub: "Centurion Lounges are premium Amex lounges with restaurant-quality food and craft cocktails",
+        type: "choice",
+        showIf: () => {
+          const airports = answers.airports || [];
+          return airports.some((a) => a.skyClub);
+        },
+        options: [
+          { label: "Yes — love them", value: "yes" },
+          { label: "A few times a year", value: "sometimes" },
+          { label: "Probably not", value: "no" },
+        ],
+      });
     }
 
-    // Companion certificate
-    if (card.companionCert && inputs.companionCertValue > 0) {
-      breakdown.push({ name: "Companion certificate", value: inputs.companionCertValue, detail: `Value of the companion's ticket you'd otherwise buy` });
-      totalValue += inputs.companionCertValue;
+    // ── COMPANION CERT ──
+    if (card.perks.companionCert) {
+      q.push({
+        id: "companionCertUse", section: "Companion Certificate",
+        question: "Would you use an annual companion certificate?",
+        sub: "You get a free round-trip ticket for a companion on domestic flights (they pay taxes only — usually $12–$250). Best used on expensive routes.",
+        type: "choice",
+        options: [
+          { label: "Definitely — I travel with someone", value: "yes" },
+          { label: "Maybe — depends on the trip", value: "maybe" },
+          { label: "Unlikely — I fly solo", value: "no" },
+        ],
+      });
+      q.push({
+        id: "companionCertValue", section: "Companion Certificate",
+        question: "What would your companion's ticket typically cost?",
+        sub: "Think about the route you'd use it on. Cross-country = $400–600+, short domestic = $150–300",
+        type: "choice",
+        showIf: () => answers.companionCertUse !== "no",
+        options: [
+          { label: "Under $200", value: 150 },
+          { label: "$200–$400", value: 300 },
+          { label: "$400–$600", value: 500 },
+          { label: "$600+", value: 700 },
+        ],
+      });
+    }
+
+    // ── DINING — RESY ──
+    if (card.perks.resyCredit) {
+      q.push({
+        id: "diningFrequency", section: "Dining & Lifestyle",
+        question: "How often do you dine out at sit-down restaurants?",
+        sub: `This card gives you up to $${card.perks.resyCredit.monthly}/month back at Resy partner restaurants`,
+        type: "choice",
+        options: [
+          { label: "Multiple times a week", value: "high" },
+          { label: "About once a week", value: "medium" },
+          { label: "A few times a month", value: "low" },
+          { label: "Rarely or never", value: "rarely" },
+        ],
+      });
+      q.push({
+        id: "resyFamiliarity", section: "Dining & Lifestyle",
+        question: "Are you familiar with Resy restaurants in your area?",
+        sub: "Resy partners with thousands of restaurants. Check if your favorites are on there.",
+        type: "resy",
+        showIf: () => answers.diningFrequency && answers.diningFrequency !== "rarely",
+      });
+    }
+
+    // ── RIDESHARE ──
+    if (card.perks.rideshareCredit) {
+      q.push({
+        id: "rideshare", section: "Dining & Lifestyle",
+        question: "How often do you use rideshare (Uber, Lyft)?",
+        sub: `You get up to $${card.perks.rideshareCredit.monthly}/month back on rideshare purchases`,
+        type: "choice",
+        options: [
+          { label: "Weekly or more", value: "high" },
+          { label: "A few times a month", value: "medium" },
+          { label: "Occasionally", value: "low" },
+          { label: "Never", value: "never" },
+        ],
+      });
+    }
+
+    // ── UBER ONE ──
+    q.push({
+      id: "uberOne", section: "Dining & Lifestyle",
+      question: "Do you use Uber One (or would you)?",
+      sub: `The card covers up to $9.99/mo for ${card.perks.uberOne.months} months (~${fmt(card.perks.uberOne.annual)}/yr value)`,
+      type: "choice",
+      options: [
+        { label: "Yes — I use Uber regularly", value: "yes" },
+        { label: "I would if it was free", value: "maybe" },
+        { label: "No — don't use Uber much", value: "no" },
+      ],
+    });
+
+    // ── DELTA STAYS ──
+    q.push({
+      id: "deltaStays", section: "Dining & Lifestyle",
+      question: "Would you book hotels through Delta Stays?",
+      sub: `You get a ${fmt(card.perks.staysCredit)} annual credit. Delta Stays earns MQDs and SkyMiles on hotel bookings.`,
+      type: "choice",
+      options: [
+        { label: "Yes — I book hotels for travel anyway", value: "yes" },
+        { label: "Maybe for some trips", value: "maybe" },
+        { label: "No — I'm loyal to hotel programs", value: "no" },
+      ],
+    });
+
+    // ── GOLD FLIGHT CREDIT ──
+    if (card.perks.flightCredit) {
+      q.push({
+        id: "hitsTenK", section: "Spending",
+        question: "Would you spend $10,000+ on this card in a year?",
+        sub: "The Gold card gives you a $200 Delta flight credit when you hit $10K in annual spending",
+        type: "choice",
+        options: [
+          { label: "Easily", value: "yes" },
+          { label: "Probably", value: "maybe" },
+          { label: "Unlikely", value: "no" },
+        ],
+      });
+    }
+
+    // ── STATUS ──
+    if (card.mqd.headstart > 0) {
+      q.push({
+        id: "chasingStatus", section: "Medallion Status",
+        question: "Are you chasing or maintaining Delta Medallion status?",
+        sub: `This card gives you a ${fmt(card.mqd.headstart)} MQD Headstart + earns $1 MQD per $${card.mqd.boostPer} spent`,
+        type: "choice",
+        options: [
+          { label: "Yes — actively chasing", value: "yes" },
+          { label: "I have status, want to keep it", value: "maintaining" },
+          { label: "Not interested in status", value: "no" },
+        ],
+      });
+    }
+
+    return q.filter((q) => !q.showIf || q.showIf());
+  };
+
+  const questions = getQuestions();
+  const currentQ = questions[step];
+  const progress = questions.length > 0 ? ((step + 1) / questions.length) * 100 : 0;
+  const isLastStep = step >= questions.length - 1;
+
+  /* ──────────────── CALCULATE ──────────────── */
+  const calculate = () => {
+    const b = [];
+    const a = answers;
+    let total = 0;
+
+    // Signup bonus
+    const bonusValue = card.signupBonus.miles * MILE_VALUE;
+    b.push({ name: "Welcome bonus", value: bonusValue, detail: `${fmtK(card.signupBonus.miles)} miles × 1¢ each (spend ${fmt(card.signupBonus.spend)} in ${card.signupBonus.months} mo)`, year1: true, icon: "✦" });
+    total += bonusValue;
+
+    // Checked bags
+    const flights = a.flights || 0;
+    const bagRate = a.checkedBags === "always" ? 1 : a.checkedBags === "sometimes" ? 0.5 : 0;
+    const companions = a.companions || 0;
+    const bagValue = flights * 2 * 45 * bagRate * (1 + companions);
+    if (bagValue > 0) {
+      b.push({ name: "Free checked bags", value: bagValue, detail: `${flights} round-trips × ${1 + companions} people × $45/bag × 2 ways`, icon: "🧳" });
+      total += bagValue;
+    }
+
+    // Companion cert
+    if (card.perks.companionCert && a.companionCertUse !== "no") {
+      const certMult = a.companionCertUse === "yes" ? 1 : 0.5;
+      const certVal = (a.companionCertValue || 0) * certMult;
+      if (certVal > 0) {
+        b.push({ name: "Companion certificate", value: certVal, detail: a.companionCertUse === "maybe" ? "50% likelihood applied" : "Annual companion fare savings", icon: "🎫" });
+        total += certVal;
+      }
     }
 
     // Sky Club
-    if (card.skyClub && inputs.skyClubVisits > 0) {
-      const skyClubValue = inputs.skyClubVisits * 50;
-      breakdown.push({ name: "Sky Club access", value: skyClubValue, detail: `${inputs.skyClubVisits} visits × ~$50 value each` });
-      totalValue += skyClubValue;
+    if (card.perks.skyClub) {
+      const airports = a.airports || [];
+      const airportsWithSC = airports.filter((ap) => ap.skyClub);
+      const scCoverage = airports.length > 0 ? airportsWithSC.length / airports.length : 0;
+      const visitRate = a.loungeFrequency === "every" ? 0.9 : a.loungeFrequency === "most" ? 0.7 : a.loungeFrequency === "sometimes" ? 0.4 : 0.1;
+      const estimatedVisits = Math.min(Math.round(flights * 1.3 * scCoverage * visitRate), 15);
+      const skyClubValue = estimatedVisits * 50;
+      if (skyClubValue > 0) {
+        b.push({
+          name: "Sky Club access",
+          value: skyClubValue,
+          detail: `~${estimatedVisits} visits × $50 value (${airportsWithSC.length} of ${airports.length} airports have clubs)`,
+          icon: "🍸",
+        });
+        total += skyClubValue;
+      }
     }
 
     // Centurion
-    if (card.centurion && inputs.centurionVisits > 0) {
-      const centurionValue = inputs.centurionVisits * 50;
-      breakdown.push({ name: "Centurion Lounge access", value: centurionValue, detail: `${inputs.centurionVisits} visits × ~$50 value each` });
-      totalValue += centurionValue;
+    if (card.perks.centurion && a.centurionUse !== "no") {
+      const airports = a.airports || [];
+      const withCenturion = airports.filter((ap) => ap.centurion);
+      const centurionVisits = a.centurionUse === "yes" ? Math.min(withCenturion.length * 3, 10) : a.centurionUse === "sometimes" ? Math.min(withCenturion.length * 1.5, 5) : 0;
+      const centurionValue = Math.round(centurionVisits) * 55;
+      if (centurionValue > 0) {
+        b.push({ name: "Centurion Lounge access", value: centurionValue, detail: `~${Math.round(centurionVisits)} visits at ${withCenturion.map((x) => x.code).join(", ")}`, icon: "🥂" });
+        total += centurionValue;
+      }
     }
 
-    const netValue = totalValue - card.annualFee;
-    return { totalValue, netValue, breakdown, annualFee: card.annualFee };
+    // Resy
+    if (card.perks.resyCredit) {
+      const resyRate = a.diningFrequency === "high" ? 1 : a.diningFrequency === "medium" ? 0.85 : a.diningFrequency === "low" ? 0.5 : 0.05;
+      const resyFamiliar = a.resyFamiliarity === "many" ? 1 : a.resyFamiliarity === "some" ? 0.8 : a.resyFamiliarity === "few" ? 0.5 : 1;
+      const adjustedRate = a.diningFrequency === "rarely" ? 0.05 : resyRate * resyFamiliar;
+      const resyValue = Math.round(card.perks.resyCredit.annual * adjustedRate);
+      b.push({ name: "Resy dining credit", value: resyValue, detail: `~${Math.round(adjustedRate * 100)}% of ${fmt(card.perks.resyCredit.annual)}/yr used`, icon: "🍽" });
+      total += resyValue;
+    }
+
+    // Rideshare
+    if (card.perks.rideshareCredit) {
+      const rideRate = a.rideshare === "high" ? 1 : a.rideshare === "medium" ? 0.7 : a.rideshare === "low" ? 0.3 : 0;
+      const rideValue = Math.round(card.perks.rideshareCredit.annual * rideRate);
+      if (rideValue > 0) {
+        b.push({ name: "Rideshare credit", value: rideValue, detail: `~${Math.round(rideRate * 100)}% utilization`, icon: "🚗" });
+        total += rideValue;
+      }
+    }
+
+    // Uber One
+    const uberRate = a.uberOne === "yes" ? 1 : a.uberOne === "maybe" ? 0.6 : 0;
+    const uberValue = Math.round(card.perks.uberOne.annual * uberRate);
+    if (uberValue > 0) {
+      b.push({ name: "Uber One credit", value: uberValue, detail: `${card.perks.uberOne.months} months covered`, icon: "📱" });
+      total += uberValue;
+    }
+
+    // Delta Stays
+    const staysRate = a.deltaStays === "yes" ? 1 : a.deltaStays === "maybe" ? 0.5 : 0;
+    const staysValue = Math.round(card.perks.staysCredit * staysRate);
+    if (staysValue > 0) {
+      b.push({ name: "Delta Stays credit", value: staysValue, detail: "Annual hotel booking credit", icon: "🏨" });
+      total += staysValue;
+    }
+
+    // Global Entry
+    if (card.perks.globalEntry) {
+      b.push({ name: "Global Entry / TSA PreCheck", value: card.perks.globalEntry, detail: "~$30/year amortized", icon: "🛂" });
+      total += card.perks.globalEntry;
+    }
+
+    // Gold flight credit
+    if (card.perks.flightCredit) {
+      const hitRate = a.hitsTenK === "yes" ? 1 : a.hitsTenK === "maybe" ? 0.5 : 0;
+      const creditValue = Math.round(card.perks.flightCredit.amount * hitRate);
+      if (creditValue > 0) {
+        b.push({ name: "Delta flight credit", value: creditValue, detail: "$200 after $10K annual spend", icon: "✈️" });
+        total += creditValue;
+      }
+    }
+
+    const fee = card.firstYearFee;
+    const ongoingFee = card.annualFee;
+
+    return {
+      breakdown: b,
+      year1: { total, fee, net: total - fee },
+      ongoing: { total: total - bonusValue, fee: ongoingFee, net: total - bonusValue - ongoingFee },
+    };
+  };
+
+  /* ══════════════════════════════════════════════════════════ */
+  /* ──────────────── CARD SELECTION ──────────────── */
+  /* ══════════════════════════════════════════════════════════ */
+  if (!selectedCard) {
+    return (
+      <div ref={containerRef} style={{ minHeight: "100vh", background: "#0D0B08", fontFamily: "'Newsreader', Georgia, serif", color: "#E8E4DF" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600;6..72,700&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+        <div style={{ padding: "48px 24px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: "11px", letterSpacing: "4px", color: "#8A8278", fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500, marginBottom: "16px" }}>DELTA AMEX CARD ANALYZER</div>
+          <h1 style={{ fontSize: "32px", fontWeight: 300, color: "#fff", margin: "0 0 12px", lineHeight: 1.2, fontStyle: "italic" }}>Is your card worth it?</h1>
+          <p style={{ fontSize: "15px", color: "#8A8278", margin: "0 0 40px", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
+            Answer a few questions about how you travel and live.<br />We'll show you the real math.
+          </p>
+        </div>
+        <div style={{ padding: "0 20px 60px" }}>
+          <div style={{ fontSize: "12px", color: "#6A6258", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, marginBottom: "12px", letterSpacing: "1px" }}>SELECT A CARD TO ANALYZE</div>
+          {Object.entries(CARDS).map(([key, c]) => (
+            <button key={key} onClick={() => { setSelectedCard(key); setStep(0); setAnswers({}); setShowResults(false); }}
+              style={{ display: "block", width: "100%", padding: "20px", marginBottom: "12px", borderRadius: "14px", border: "1px solid #2A2620", background: "#151310", cursor: "pointer", textAlign: "left", transition: "all 0.3s", position: "relative", overflow: "hidden" }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.accent; e.currentTarget.style.background = `${c.color}15`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A2620"; e.currentTarget.style.background = "#151310"; }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: "18px", fontWeight: 600, color: "#fff", fontFamily: "'DM Sans', sans-serif", marginBottom: "4px" }}>{c.short}</div>
+                  <div style={{ fontSize: "12px", color: "#8A8278", fontFamily: "'DM Sans', sans-serif" }}>
+                    {c.firstYearFee === 0 ? "$0 first year, then " : ""}{fmt(c.annualFee)}/yr · Up to {fmtK(c.signupBonus.miles)} bonus miles
+                  </div>
+                </div>
+                <div style={{ width: "48px", height: "32px", borderRadius: "6px", background: c.gradient, boxShadow: `0 2px 12px ${c.color}66` }} />
+              </div>
+              <div style={{ display: "flex", gap: "6px", marginTop: "12px", flexWrap: "wrap" }}>
+                {c.perks.skyClub && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Sky Club</span>}
+                {c.perks.centurion && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Centurion</span>}
+                {c.perks.companionCert && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Companion Cert</span>}
+                {c.perks.resyCredit && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Resy Credit</span>}
+                {c.mqd.headstart > 0 && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>MQD Boost</span>}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  const result = calculateValue();
+  /* ══════════════════════════════════════════════════════════ */
+  /* ──────────────── RESULTS ──────────────── */
+  /* ══════════════════════════════════════════════════════════ */
+  if (showResults) {
+    const result = calculate();
+    const y1 = result.year1;
+    const og = result.ongoing;
+
+    return (
+      <div ref={containerRef} style={{ minHeight: "100vh", background: "#0D0B08", fontFamily: "'DM Sans', sans-serif", color: "#E8E4DF", overflowY: "auto" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600;6..72,700&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+        <div style={{ padding: "24px 20px 16px" }}>
+          <button onClick={() => setShowResults(false)} style={{ background: "none", border: "none", color: "#8A8278", fontSize: "13px", cursor: "pointer", padding: 0, fontFamily: "'DM Sans', sans-serif" }}>← Back to questions</button>
+        </div>
+        <div style={{ padding: "0 20px", textAlign: "center", marginBottom: "24px" }}>
+          <div style={{ width: "56px", height: "36px", borderRadius: "8px", background: card.gradient, margin: "0 auto 16px", boxShadow: `0 4px 20px ${card.color}88` }} />
+          <div style={{ fontSize: "11px", letterSpacing: "3px", color: "#8A8278", fontFamily: "'IBM Plex Mono', monospace", marginBottom: "8px" }}>YOUR {card.short.toUpperCase()} ANALYSIS</div>
+        </div>
+
+        {/* Year 1 */}
+        <div style={{ padding: "0 20px", marginBottom: "16px" }}>
+          <div style={{
+            borderRadius: "16px", padding: "28px 24px", textAlign: "center",
+            background: y1.net >= 0 ? "linear-gradient(145deg, rgba(34,120,60,0.15), rgba(34,120,60,0.03))" : "linear-gradient(145deg, rgba(180,50,50,0.15), rgba(180,50,50,0.03))",
+            border: y1.net >= 0 ? "1px solid rgba(74,222,128,0.2)" : "1px solid rgba(248,113,113,0.2)",
+          }}>
+            <div style={{ fontSize: "10px", letterSpacing: "2px", color: "#8A8278", fontFamily: "'IBM Plex Mono', monospace", marginBottom: "6px" }}>YEAR 1 NET VALUE</div>
+            <div style={{ fontSize: "42px", fontWeight: 700, color: y1.net >= 0 ? "#4ade80" : "#f87171", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>
+              {y1.net >= 0 ? "+" : ""}{fmt(y1.net)}
+            </div>
+            <div style={{ fontSize: "13px", color: "#8A8278", marginTop: "8px" }}>{fmt(y1.total)} in value — {fmt(y1.fee)} annual fee</div>
+            <div style={{
+              display: "inline-block", marginTop: "14px", padding: "6px 18px", borderRadius: "20px", fontSize: "12px", fontWeight: 600,
+              background: y1.net >= 500 ? "rgba(74,222,128,0.12)" : y1.net >= 0 ? "rgba(250,204,21,0.12)" : "rgba(248,113,113,0.12)",
+              color: y1.net >= 500 ? "#4ade80" : y1.net >= 0 ? "#facc15" : "#f87171",
+            }}>
+              {y1.net >= 500 ? "The card pays for itself and then some" : y1.net >= 200 ? "Solid return on the annual fee" : y1.net >= 0 ? "Borderline — close call" : y1.net >= -100 ? "Tight — consider a lower-tier card" : "Hard to justify at your usage level"}
+            </div>
+          </div>
+        </div>
+
+        {/* Ongoing */}
+        <div style={{ padding: "0 20px", marginBottom: "24px" }}>
+          <div style={{ borderRadius: "12px", padding: "16px 20px", textAlign: "center", background: "#151310", border: "1px solid #2A2620" }}>
+            <div style={{ fontSize: "10px", letterSpacing: "2px", color: "#6A6258", fontFamily: "'IBM Plex Mono', monospace", marginBottom: "4px" }}>ONGOING VALUE (YEAR 2+)</div>
+            <div style={{ fontSize: "24px", fontWeight: 700, color: og.net >= 0 ? "#4ade80" : "#f87171", fontFamily: "'IBM Plex Mono', monospace" }}>
+              {og.net >= 0 ? "+" : ""}{fmt(og.net)}
+            </div>
+            <div style={{ fontSize: "12px", color: "#6A6258", marginTop: "4px" }}>Without the welcome bonus</div>
+          </div>
+        </div>
+
+        {/* Breakdown */}
+        <div style={{ padding: "0 20px 20px" }}>
+          <div style={{ fontSize: "10px", letterSpacing: "2px", color: "#6A6258", fontFamily: "'IBM Plex Mono', monospace", marginBottom: "12px" }}>VALUE BREAKDOWN</div>
+          {result.breakdown.map((item, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: i < result.breakdown.length - 1 ? "1px solid #1A1815" : "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: "16px", width: "24px", textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 500, color: "#E8E4DF" }}>
+                    {item.name}
+                    {item.year1 && <span style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "3px", background: "rgba(74,222,128,0.12)", color: "#4ade80", marginLeft: "6px", fontFamily: "'IBM Plex Mono', monospace" }}>YEAR 1</span>}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#6A6258", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>{item.detail}</div>
+                </div>
+              </div>
+              <div style={{ fontSize: "14px", fontWeight: 600, color: "#4ade80", fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap", marginLeft: "12px" }}>+{fmt(item.value)}</div>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 0", marginTop: "8px", borderTop: "2px solid #2A2620" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "#f87171" }}>Annual fee</span>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "#f87171", fontFamily: "'IBM Plex Mono', monospace" }}>-{fmt(card.annualFee)}</span>
+          </div>
+        </div>
+
+        <div style={{ padding: "12px 20px 40px", textAlign: "center" }}>
+          <button onClick={() => { setSelectedCard(null); setStep(0); setAnswers({}); setShowResults(false); }}
+            style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "1px solid #2A2620", background: "#151310", color: "#E8E4DF", fontSize: "14px", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+            Compare another card
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ══════════════════════════════════════════════════════════ */
+  /* ──────────────── QUESTION SCREEN ──────────────── */
+  /* ══════════════════════════════════════════════════════════ */
+  const handleContinue = () => {
+    if (isLastStep) {
+      setShowResults(true);
+    } else {
+      goNext();
+    }
+  };
+
+  const canContinue = (() => {
+    if (!currentQ) return false;
+    if (currentQ.type === "choice") return answers[currentQ.id] !== undefined;
+    if (currentQ.type === "airports") return (answers.airports || []).length > 0;
+    if (currentQ.type === "resy") return answers[currentQ.id] !== undefined;
+    if (currentQ.type === "info") return true;
+    return true;
+  })();
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      fontFamily: "'Libre Franklin', 'Helvetica Neue', sans-serif",
-      background: "#1a1815",
-      color: "#e8e4df",
-    }}>
-      <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <div ref={containerRef} style={{ minHeight: "100vh", background: "#0D0B08", fontFamily: "'DM Sans', sans-serif", color: "#E8E4DF", display: "flex", flexDirection: "column" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600;6..72,700&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-      {/* Header */}
-      <div style={{ padding: "28px 20px 20px", borderBottom: "1px solid #2a2620" }}>
-        <div style={{ fontSize: "10px", letterSpacing: "3px", color: "#8a8278", fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500, marginBottom: "8px" }}>
-          DELTA AMEX CARD ANALYZER
-        </div>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#fff", margin: "0 0 4px", lineHeight: 1.2 }}>
-          Is your card worth keeping?
-        </h1>
-        <p style={{ fontSize: "13px", color: "#8a8278", margin: 0 }}>
-          Input your habits. See the real math.
-        </p>
-      </div>
-
-      {/* Card Selector */}
-      <div style={{ padding: "16px 20px", display: "flex", gap: "8px" }}>
-        {Object.entries(CARDS).map(([key, c]) => (
-          <button
-            key={key}
-            onClick={() => { setSelectedCard(key); setShowResults(false); }}
-            style={{
-              flex: 1, padding: "12px 8px", borderRadius: "10px", cursor: "pointer",
-              border: selectedCard === key ? `1.5px solid ${c.colorLight}` : "1.5px solid #2a2620",
-              background: selectedCard === key ? c.colorGlow : "transparent",
-              transition: "all 0.2s",
-            }}
-          >
-            <div style={{ fontSize: "10px", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "1px", color: selectedCard === key ? c.colorLight : "#6a6258", marginBottom: "4px" }}>
-              {c.shortName.toUpperCase()}
-            </div>
-            <div style={{ fontSize: "14px", fontWeight: 600, color: selectedCard === key ? "#fff" : "#8a8278" }}>
-              {formatDollar(c.annualFee)}
-              <span style={{ fontSize: "10px", fontWeight: 400, color: "#6a6258" }}>/yr</span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Input Section Tabs */}
-      <div style={{ padding: "0 20px", display: "flex", gap: "0", borderBottom: "1px solid #2a2620" }}>
-        {[
-          { id: "travel", label: "Travel" },
-          { id: "spending", label: "Spending" },
-          { id: "benefits", label: "Credits" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSection(tab.id)}
-            style={{
-              padding: "10px 16px", border: "none", cursor: "pointer", background: "transparent",
-              fontSize: "12px", fontWeight: 600, fontFamily: "'Libre Franklin', sans-serif",
-              color: activeSection === tab.id ? "#fff" : "#6a6258",
-              borderBottom: activeSection === tab.id ? `2px solid ${card.colorLight}` : "2px solid transparent",
-            }}
-          >{tab.label}</button>
-        ))}
-      </div>
-
-      {/* Inputs */}
-      <div style={{ padding: "20px" }}>
-        {activeSection === "travel" && (
-          <>
-            <Slider label="Delta round-trip flights per year" value={inputs.deltaFlights} onChange={(v) => update("deltaFlights", v)} min={0} max={30} step={1} suffix=" flights" prefix="" />
-            <Slider label="Trips where you check a bag" value={inputs.checkedBagTrips} onChange={(v) => update("checkedBagTrips", v)} min={0} max={30} step={1} suffix=" trips" prefix="" />
-            <Slider label="Travel companions (same reservation)" value={inputs.companionsPerTrip} onChange={(v) => update("companionsPerTrip", v)} min={0} max={8} step={1} suffix="" prefix="" sublabel="They get free bags too" />
-            {card.companionCert && (
-              <Slider label="Companion cert ticket value" sublabel="What would the companion's ticket cost without the cert?" value={inputs.companionCertValue} onChange={(v) => update("companionCertValue", v)} min={0} max={1500} step={50} prefix="$" suffix="" />
-            )}
-            {card.skyClub && (
-              <Slider label="Sky Club visits per year" sublabel="15 included, unlimited at $75K spend" value={inputs.skyClubVisits} onChange={(v) => update("skyClubVisits", v)} min={0} max={30} step={1} suffix=" visits" prefix="" />
-            )}
-            {card.centurion && (
-              <Slider label="Centurion Lounge visits per year" value={inputs.centurionVisits} onChange={(v) => update("centurionVisits", v)} min={0} max={15} step={1} suffix=" visits" prefix="" />
-            )}
-          </>
-        )}
-
-        {activeSection === "spending" && (
-          <>
-            <Slider label="Annual Delta purchases" sublabel={`Earns ${card.earnRates.delta}X miles`} value={inputs.annualDeltaSpend} onChange={(v) => update("annualDeltaSpend", v)} min={0} max={20000} step={500} prefix="$" suffix="" />
-            {card.earnRates.restaurants && (
-              <Slider label="Annual restaurant spending" sublabel={`Earns ${card.earnRates.restaurants}X miles`} value={inputs.annualRestaurantSpend} onChange={(v) => update("annualRestaurantSpend", v)} min={0} max={20000} step={500} prefix="$" suffix="" />
-            )}
-            {card.earnRates.supermarkets && (
-              <Slider label="Annual supermarket spending" sublabel={`Earns ${card.earnRates.supermarkets}X miles`} value={inputs.annualSupermarketSpend} onChange={(v) => update("annualSupermarketSpend", v)} min={0} max={20000} step={500} prefix="$" suffix="" />
-            )}
-            <Slider label="Annual other spending" sublabel={`Earns ${card.earnRates.other}X miles`} value={inputs.annualOtherSpend} onChange={(v) => update("annualOtherSpend", v)} min={0} max={100000} step={1000} prefix="$" suffix="" />
-            {card.earnNote && <div style={{ fontSize: "11px", color: "#8a8278", fontStyle: "italic", marginTop: "-8px", marginBottom: "16px" }}>{card.earnNote}</div>}
-          </>
-        )}
-
-        {activeSection === "benefits" && (
-          <>
-            <div style={{ fontSize: "12px", color: "#8a8278", marginBottom: "16px" }}>
-              Toggle on the credits you'd actually use. Be honest — unused credits are worth $0.
-            </div>
-            {card.benefits.find((b) => b.key === "resyCredit") && (
-              <Toggle label="Resy dining credit" sublabel={card.benefits.find((b) => b.key === "resyCredit").description} value={inputs.usesResyCredit} onChange={(v) => update("usesResyCredit", v)} />
-            )}
-            {card.benefits.find((b) => b.key === "rideshareCredit") && (
-              <Toggle label="Rideshare credit" sublabel={card.benefits.find((b) => b.key === "rideshareCredit").description} value={inputs.usesRideshareCredit} onChange={(v) => update("usesRideshareCredit", v)} />
-            )}
-            {card.benefits.find((b) => b.key === "staysCredit") && (
-              <Toggle label="Delta Stays credit" sublabel={card.benefits.find((b) => b.key === "staysCredit").description} value={inputs.usesStaysCredit} onChange={(v) => update("usesStaysCredit", v)} />
-            )}
-            {card.benefits.find((b) => b.key === "uberOne") && (
-              <Toggle label="Uber One credit" sublabel={card.benefits.find((b) => b.key === "uberOne").description} value={inputs.usesUberOne} onChange={(v) => update("usesUberOne", v)} />
-            )}
-            {card.benefits.find((b) => b.key === "flightCredit") && (
-              <Toggle label="Delta flight credit" sublabel="$200 after $10K annual spend" value={inputs.usesFlightCredit} onChange={(v) => update("usesFlightCredit", v)} />
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Calculate Button */}
-      <div style={{ padding: "0 20px 20px" }}>
-        <button
-          onClick={() => setShowResults(true)}
-          style={{
-            width: "100%", padding: "14px", borderRadius: "10px", border: "none",
-            background: `linear-gradient(135deg, ${card.color}, ${card.colorLight})`,
-            color: "#fff", fontSize: "14px", fontWeight: 600, cursor: "pointer",
-            fontFamily: "'Libre Franklin', sans-serif",
-          }}
-        >
-          {showResults ? "Recalculate" : "Show me the math"}
-        </button>
-      </div>
-
-      {/* Results */}
-      {showResults && (
-        <div style={{ padding: "0 20px 40px", animation: "fadeIn 0.4s ease" }}>
-          <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-
-          {/* Verdict Card */}
-          <div style={{
-            background: result.netValue >= 0
-              ? "linear-gradient(135deg, rgba(34,120,60,0.2), rgba(34,120,60,0.05))"
-              : "linear-gradient(135deg, rgba(180,50,50,0.2), rgba(180,50,50,0.05))",
-            border: result.netValue >= 0 ? "1px solid rgba(34,120,60,0.3)" : "1px solid rgba(180,50,50,0.3)",
-            borderRadius: "14px", padding: "24px", marginBottom: "16px", textAlign: "center",
-          }}>
-            <div style={{ fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "2px", color: "#8a8278", marginBottom: "8px" }}>
-              YOUR NET VALUE
-            </div>
-            <div style={{ fontSize: "36px", fontWeight: 700, color: result.netValue >= 0 ? "#4ade80" : "#f87171", fontFamily: "'IBM Plex Mono', monospace" }}>
-              {result.netValue >= 0 ? "+" : ""}{formatDollar(result.netValue)}
-            </div>
-            <div style={{ fontSize: "13px", color: "#8a8278", marginTop: "8px" }}>
-              {formatDollar(result.totalValue)} in value — {formatDollar(card.annualFee)} annual fee
-            </div>
-            <div style={{
-              display: "inline-block", marginTop: "12px", padding: "6px 16px",
-              borderRadius: "20px", fontSize: "12px", fontWeight: 600,
-              background: result.netValue >= 0 ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)",
-              color: result.netValue >= 0 ? "#4ade80" : "#f87171",
-            }}>
-              {result.netValue >= 200 ? "Definitely keep it" : result.netValue >= 0 ? "Worth keeping — but close" : result.netValue >= -100 ? "Borderline — consider downgrading" : "Consider canceling or downgrading"}
-            </div>
-          </div>
-
-          {/* Breakdown */}
-          <div style={{
-            background: "#221f1b", borderRadius: "14px", padding: "20px",
-            border: "1px solid #2a2620",
-          }}>
-            <div style={{ fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "2px", color: "#8a8278", marginBottom: "16px" }}>
-              VALUE BREAKDOWN
-            </div>
-            {result.breakdown.map((item, i) => (
-              <div key={i} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-                padding: "10px 0",
-                borderBottom: i < result.breakdown.length - 1 ? "1px solid #2a2620" : "none",
-              }}>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 500, color: "#e8e4df" }}>{item.name}</div>
-                  <div style={{ fontSize: "11px", color: "#6a6258", marginTop: "2px" }}>{item.detail}</div>
-                </div>
-                <div style={{ fontSize: "14px", fontWeight: 600, color: "#4ade80", fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap", marginLeft: "12px" }}>
-                  +{formatDollar(item.value)}
-                </div>
-              </div>
-            ))}
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "12px 0 0", marginTop: "4px", borderTop: "2px solid #2a2620",
-            }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "#e8e4df" }}>Total value</span>
-              <span style={{ fontSize: "16px", fontWeight: 700, color: "#fff", fontFamily: "'IBM Plex Mono', monospace" }}>
-                {formatDollar(result.totalValue)}
-              </span>
-            </div>
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "8px 0",
-            }}>
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "#f87171" }}>Annual fee</span>
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "#f87171", fontFamily: "'IBM Plex Mono', monospace" }}>
-                -{formatDollar(card.annualFee)}
-              </span>
-            </div>
-          </div>
-
-          {/* MQD info for Platinum/Reserve */}
-          {card.mqd.headstart > 0 && inputs.caresAboutStatus && (
-            <div style={{
-              background: "#221f1b", borderRadius: "14px", padding: "20px", marginTop: "12px",
-              border: "1px solid #2a2620",
-            }}>
-              <div style={{ fontSize: "11px", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "2px", color: "#8a8278", marginBottom: "12px" }}>
-                STATUS ACCELERATION
-              </div>
-              <div style={{ fontSize: "13px", color: "#e8e4df", lineHeight: 1.6 }}>
-                This card contributes <strong style={{ color: card.colorLight }}>{formatDollar(card.mqd.headstart)}</strong> MQD Headstart plus <strong style={{ color: card.colorLight }}>{card.mqd.boostLabel}</strong> toward Medallion status. Based on your <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{formatDollar(inputs.annualDeltaSpend + inputs.annualOtherSpend + (inputs.annualRestaurantSpend || 0) + (inputs.annualSupermarketSpend || 0))}</span> total annual spend, that's roughly <strong style={{ color: card.colorLight }}>{formatDollar(card.mqd.headstart + Math.floor((inputs.annualDeltaSpend + inputs.annualOtherSpend + (inputs.annualRestaurantSpend || 0) + (inputs.annualSupermarketSpend || 0)) / card.mqd.boostRate))}</strong> MQDs from this card alone.
-              </div>
-              <div style={{ fontSize: "11px", color: "#6a6258", marginTop: "8px" }}>
-                Not included in dollar value above — but critical if you're chasing status.
-              </div>
-            </div>
-          )}
-
-          {/* Compare nudge */}
-          <div style={{
-            textAlign: "center", padding: "20px 0 0", fontSize: "13px", color: "#6a6258",
-          }}>
-            Try switching cards above to compare all three.
+      {/* Top bar */}
+      <div style={{ padding: "16px 20px 12px", display: "flex", alignItems: "center", gap: "12px" }}>
+        <button onClick={goBack} style={{ background: "none", border: "none", color: "#8A8278", fontSize: "18px", cursor: "pointer", padding: "4px" }}>←</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ height: "3px", background: "#1A1815", borderRadius: "2px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${progress}%`, background: card.accent, borderRadius: "2px", transition: "width 0.4s ease" }} />
           </div>
         </div>
-      )}
+        <span style={{ fontSize: "11px", color: "#6A6258", fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap" }}>{step + 1}/{questions.length}</span>
+      </div>
+
+      {/* Card badge */}
+      <div style={{ padding: "8px 20px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ width: "28px", height: "18px", borderRadius: "4px", background: card.gradient }} />
+        <span style={{ fontSize: "11px", color: "#6A6258", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "1px" }}>{card.short.toUpperCase()}</span>
+      </div>
+
+      {/* Question content */}
+      <div style={{
+        flex: 1, padding: "24px 20px 120px",
+        opacity: animating ? 0 : 1, transform: animating ? "translateX(20px)" : "translateX(0)",
+        transition: "all 0.2s ease",
+      }}>
+        {currentQ && (
+          <>
+            <div style={{ fontSize: "10px", letterSpacing: "2px", color: card.accent, fontFamily: "'IBM Plex Mono', monospace", marginBottom: "12px" }}>
+              {currentQ.section?.toUpperCase()}
+            </div>
+            <h2 style={{ fontSize: "22px", fontWeight: 600, color: "#fff", margin: "0 0 8px", lineHeight: 1.3 }}>{currentQ.question}</h2>
+            {currentQ.sub && <p style={{ fontSize: "13px", color: "#8A8278", margin: "0 0 28px", lineHeight: 1.5 }}>{currentQ.sub}</p>}
+
+            {/* Choice type */}
+            {currentQ.type === "choice" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {currentQ.options.map((opt) => {
+                  const isSelected = answers[currentQ.id] === opt.value;
+                  return (
+                    <button key={opt.label} onClick={() => {
+                      answer(currentQ.id, opt.value);
+                      // Auto-advance for simple choices
+                      setTimeout(() => {
+                        if (isLastStep) setShowResults(true);
+                        else goNext();
+                      }, 300);
+                    }}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "16px 18px", borderRadius: "12px",
+                        border: isSelected ? `1.5px solid ${card.accent}` : "1.5px solid #2A2620",
+                        background: isSelected ? `${card.color}20` : "#151310",
+                        cursor: "pointer", transition: "all 0.2s", textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: "15px", fontWeight: 500, color: isSelected ? "#fff" : "#C8C4BF" }}>{opt.label}</span>
+                      {isSelected && <span style={{ fontSize: "14px", color: card.accent }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Airport search type */}
+            {currentQ.type === "airports" && (
+              <>
+                <AirportSearch
+                  selected={answers.airports || []}
+                  onSelect={(a) => answer("airports", [...(answers.airports || []), a])}
+                  onRemove={(code) => answer("airports", (answers.airports || []).filter((a) => a.code !== code))}
+                  max={6}
+                  accent={card.accent}
+                />
+                {(answers.airports || []).length > 0 && (
+                  <button onClick={handleContinue}
+                    style={{
+                      width: "100%", padding: "14px", borderRadius: "10px", border: "none",
+                      background: card.accent, color: "#fff", fontSize: "14px", fontWeight: 600,
+                      cursor: "pointer", marginTop: "20px", fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    Continue
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Resy type */}
+            {currentQ.type === "resy" && (
+              <div>
+                <a
+                  href={`https://resy.com/cities/${encodeURIComponent((userCity || "new-york").toLowerCase().replace(/\s+/g, "-"))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block", padding: "16px 18px", borderRadius: "12px",
+                    background: "#151310", border: "1.5px solid #2A2620",
+                    textDecoration: "none", marginBottom: "16px", textAlign: "center",
+                    transition: "border-color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = card.accent)}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#2A2620")}
+                >
+                  <div style={{ fontSize: "14px", fontWeight: 600, color: card.accent, marginBottom: "4px" }}>
+                    Browse Resy restaurants {userCity ? `in ${userCity}` : "near you"} →
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#6A6258" }}>Opens in a new tab — come back here when you're done</div>
+                </a>
+
+                <div style={{ fontSize: "13px", color: "#C8C4BF", marginBottom: "14px" }}>
+                  How many of those restaurants do you recognize or visit?
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {[
+                    { label: "A lot — I see my regular spots", value: "many" },
+                    { label: "Some — a few I recognize", value: "some" },
+                    { label: "Not many — mostly unfamiliar", value: "few" },
+                    { label: "I'll skip checking — just estimate for me", value: "skip" },
+                  ].map((opt) => {
+                    const isSelected = answers[currentQ.id] === opt.value;
+                    return (
+                      <button key={opt.value} onClick={() => {
+                        answer(currentQ.id, opt.value);
+                        setTimeout(() => {
+                          if (isLastStep) setShowResults(true);
+                          else goNext();
+                        }, 300);
+                      }}
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "14px 16px", borderRadius: "10px",
+                          border: isSelected ? `1.5px solid ${card.accent}` : "1.5px solid #2A2620",
+                          background: isSelected ? `${card.color}20` : "#151310",
+                          cursor: "pointer", transition: "all 0.2s", textAlign: "left",
+                        }}
+                      >
+                        <span style={{ fontSize: "14px", fontWeight: 500, color: isSelected ? "#fff" : "#C8C4BF" }}>{opt.label}</span>
+                        {isSelected && <span style={{ fontSize: "14px", color: card.accent }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Info type */}
+            {currentQ.type === "info" && (
+              <button onClick={handleContinue}
+                style={{
+                  width: "100%", padding: "14px", borderRadius: "10px", border: "none",
+                  background: card.accent, color: "#fff", fontSize: "14px", fontWeight: 600,
+                  cursor: "pointer", marginTop: "8px", fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                Continue
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
