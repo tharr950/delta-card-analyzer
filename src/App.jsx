@@ -75,6 +75,40 @@ const CARDS = {
       flightCredit: { amount: 200, spendReq: 10000 },
     },
   },
+  amexPlatinum: {
+    name: "The Platinum Card from American Express",
+    short: "Amex Platinum",
+    annualFee: 895,
+    firstYearFee: 895,
+    signupBonus: { miles: 100000, spend: 8000, months: 6 },
+    color: "#8C8C8C",
+    accent: "#C0C0C0",
+    gradient: "linear-gradient(135deg, #6B6B6B 0%, #A8A8A8 50%, #6B6B6B 100%)",
+    mqd: { headstart: 0, boostPer: 0 },
+    rewardsType: "MR",
+    perks: {
+      skyClub: { visits: 10, unlimitedAt: 75000 },
+      centurion: true,
+      priorityPass: true,
+      companionCert: false,
+      checkedBag: false,
+      resyCredit: { monthly: 20, annual: 240 },
+      rideshareCredit: null,
+      staysCredit: 0,
+      uberOne: { monthly: 9.99, months: 12, annual: 120 },
+      uberCash: { monthly: 15, annual: 200 },
+      globalEntry: 100,
+      takeoff15: false,
+      upgradePriority: false,
+      saksCredit: { semiAnnual: 50, annual: 100 },
+      airlineCredit: 200,
+      streamingCredit: { monthly: 20, annual: 240 },
+      hotelCredit: 200,
+      clearCredit: 209,
+      equinoxCredit: { monthly: 25, annual: 300 },
+      walmartPlus: 155,
+    },
+  },
 };
 
 const MILE_VALUE = 0.01;
@@ -518,6 +552,134 @@ export default function App() {
       });
     }
 
+
+    // __ AMEX PLATINUM CREDITS __
+    if (card.perks.saksCredit) {
+      q.push({
+        id: "saksUse", section: "Shopping & Lifestyle",
+        question: "Do you shop at Saks Fifth Avenue?",
+        sub: "You get $50 in Saks credit twice a year ($100/yr total)",
+        type: "choice",
+        options: [
+          { label: "Yes - I shop there regularly", value: "yes" },
+          { label: "Occasionally or for gifts", value: "sometimes" },
+          { label: "Never", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.airlineCredit) {
+      q.push({
+        id: "airlineCreditUse", section: "Travel Credits",
+        question: "Would you use a $200 annual airline incidental credit?",
+        sub: "Covers baggage fees, seat upgrades, in-flight purchases on your selected airline",
+        type: "choice",
+        options: [
+          { label: "Easily - I fly often", value: "yes" },
+          { label: "Probably on a few trips", value: "sometimes" },
+          { label: "Unlikely", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.hotelCredit) {
+      q.push({
+        id: "hotelCreditUse", section: "Travel Credits",
+        question: "Would you book prepaid hotels through Amex Travel?",
+        sub: "You get $200/yr back on prepaid hotel bookings through the Amex Travel portal",
+        type: "choice",
+        options: [
+          { label: "Yes - I book hotels for travel anyway", value: "yes" },
+          { label: "Maybe for some trips", value: "sometimes" },
+          { label: "No - I book direct or use other portals", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.streamingCredit) {
+      q.push({
+        id: "streamingUse", section: "Dining & Lifestyle",
+        question: "Do you pay for streaming services?",
+        sub: "You get up to $20/month back on eligible streaming (Disney+, Hulu, ESPN+, Peacock, NYT, etc.)",
+        type: "choice",
+        options: [
+          { label: "Yes - multiple subscriptions", value: "high" },
+          { label: "One or two services", value: "medium" },
+          { label: "No", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.clearCredit) {
+      q.push({
+        id: "clearUse", section: "Travel Credits",
+        question: "Do you use or would you use CLEAR Plus?",
+        sub: "You get up to $209/yr back on a CLEAR Plus membership for faster airport security",
+        type: "choice",
+        options: [
+          { label: "Yes - I use it already", value: "yes" },
+          { label: "I would if it was covered", value: "maybe" },
+          { label: "Not interested", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.walmartPlus) {
+      q.push({
+        id: "walmartUse", section: "Dining & Lifestyle",
+        question: "Do you use or would you use Walmart+?",
+        sub: "You get up to $155/yr back on a Walmart+ membership (free delivery, fuel discounts, Paramount+)",
+        type: "choice",
+        options: [
+          { label: "Yes - I shop at Walmart regularly", value: "yes" },
+          { label: "I would if it was covered", value: "maybe" },
+          { label: "Not interested", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.equinoxCredit) {
+      q.push({
+        id: "equinoxUse", section: "Dining & Lifestyle",
+        question: "Are you an Equinox member or interested in joining?",
+        sub: "You get up to $25/month ($300/yr) back on an Equinox+ membership",
+        type: "choice",
+        options: [
+          { label: "Yes - I am a member", value: "yes" },
+          { label: "I would consider it", value: "maybe" },
+          { label: "No", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.priorityPass) {
+      q.push({
+        id: "priorityPassUse", section: "Lounge Access",
+        question: "Would you use Priority Pass lounge access?",
+        sub: "The Amex Platinum includes Priority Pass Select with 1,400+ lounges worldwide beyond just Sky Clubs and Centurion",
+        type: "choice",
+        options: [
+          { label: "Yes - great for international travel", value: "yes" },
+          { label: "Occasionally", value: "sometimes" },
+          { label: "Probably not", value: "no" },
+        ],
+      });
+    }
+
+    if (card.perks.uberCash) {
+      q.push({
+        id: "uberCashUse", section: "Dining & Lifestyle",
+        question: "Would you use $15-35/month in Uber Cash?",
+        sub: "You get $15/month in Uber Cash for rides or Uber Eats ($200/yr total, with a $20 bonus in December)",
+        type: "choice",
+        options: [
+          { label: "Yes - I use Uber or Uber Eats regularly", value: "yes" },
+          { label: "Sometimes", value: "sometimes" },
+          { label: "Rarely or never", value: "no" },
+        ],
+      });
+    }
+
     // ── STATUS ──
     if (card.mqd.headstart > 0) {
       q.push({
@@ -655,6 +817,97 @@ export default function App() {
       }
     }
 
+
+    // Saks credit
+    if (card.perks.saksCredit) {
+      const saksRate = a.saksUse === "yes" ? 1 : a.saksUse === "sometimes" ? 0.6 : 0;
+      const saksValue = Math.round(card.perks.saksCredit.annual * saksRate);
+      if (saksValue > 0) {
+        b.push({ name: "Saks Fifth Avenue credit", value: saksValue, detail: "$50 twice a year", icon: "🛍" });
+        total += saksValue;
+      }
+    }
+
+    // Airline incidental credit
+    if (card.perks.airlineCredit) {
+      const airlineRate = a.airlineCreditUse === "yes" ? 1 : a.airlineCreditUse === "sometimes" ? 0.6 : 0;
+      const airlineValue = Math.round(card.perks.airlineCredit * airlineRate);
+      if (airlineValue > 0) {
+        b.push({ name: "Airline incidental credit", value: airlineValue, detail: "Baggage, seat upgrades, in-flight purchases", icon: "✈" });
+        total += airlineValue;
+      }
+    }
+
+    // Hotel credit
+    if (card.perks.hotelCredit) {
+      const hotelRate = a.hotelCreditUse === "yes" ? 1 : a.hotelCreditUse === "sometimes" ? 0.5 : 0;
+      const hotelValue = Math.round(card.perks.hotelCredit * hotelRate);
+      if (hotelValue > 0) {
+        b.push({ name: "Amex Travel hotel credit", value: hotelValue, detail: "Prepaid hotels through Amex Travel", icon: "🏨" });
+        total += hotelValue;
+      }
+    }
+
+    // Streaming credit
+    if (card.perks.streamingCredit) {
+      const streamRate = a.streamingUse === "high" ? 1 : a.streamingUse === "medium" ? 0.5 : 0;
+      const streamValue = Math.round(card.perks.streamingCredit.annual * streamRate);
+      if (streamValue > 0) {
+        b.push({ name: "Streaming credit", value: streamValue, detail: "Disney+, Hulu, ESPN+, Peacock, NYT, etc.", icon: "📺" });
+        total += streamValue;
+      }
+    }
+
+    // CLEAR credit
+    if (card.perks.clearCredit) {
+      const clearRate = a.clearUse === "yes" ? 1 : a.clearUse === "maybe" ? 0.8 : 0;
+      const clearValue = Math.round(card.perks.clearCredit * clearRate);
+      if (clearValue > 0) {
+        b.push({ name: "CLEAR Plus credit", value: clearValue, detail: "Faster airport security", icon: "🔍" });
+        total += clearValue;
+      }
+    }
+
+    // Walmart+
+    if (card.perks.walmartPlus) {
+      const walmartRate = a.walmartUse === "yes" ? 1 : a.walmartUse === "maybe" ? 0.7 : 0;
+      const walmartValue = Math.round(card.perks.walmartPlus * walmartRate);
+      if (walmartValue > 0) {
+        b.push({ name: "Walmart+ credit", value: walmartValue, detail: "Free delivery, fuel discounts, Paramount+", icon: "🛒" });
+        total += walmartValue;
+      }
+    }
+
+    // Equinox
+    if (card.perks.equinoxCredit) {
+      const eqRate = a.equinoxUse === "yes" ? 1 : a.equinoxUse === "maybe" ? 0.3 : 0;
+      const eqValue = Math.round(card.perks.equinoxCredit.annual * eqRate);
+      if (eqValue > 0) {
+        b.push({ name: "Equinox+ credit", value: eqValue, detail: "$25/month membership credit", icon: "💪" });
+        total += eqValue;
+      }
+    }
+
+    // Uber Cash (separate from Uber One)
+    if (card.perks.uberCash) {
+      const uberCashRate = a.uberCashUse === "yes" ? 1 : a.uberCashUse === "sometimes" ? 0.6 : 0;
+      const uberCashValue = Math.round(card.perks.uberCash.annual * uberCashRate);
+      if (uberCashValue > 0) {
+        b.push({ name: "Uber Cash", value: uberCashValue, detail: "$15/mo + $20 bonus in December", icon: "🚕" });
+        total += uberCashValue;
+      }
+    }
+
+    // Priority Pass
+    if (card.perks.priorityPass) {
+      const ppVisits = a.priorityPassUse === "yes" ? 8 : a.priorityPassUse === "sometimes" ? 3 : 0;
+      const ppValue = ppVisits * 40;
+      if (ppValue > 0) {
+        b.push({ name: "Priority Pass lounges", value: ppValue, detail: "~" + ppVisits + " visits x $40 value (1,400+ lounges)", icon: "🌍" });
+        total += ppValue;
+      }
+    }
+
     const fee = card.firstYearFee;
     const ongoingFee = card.annualFee;
 
@@ -699,6 +952,7 @@ export default function App() {
               <div style={{ display: "flex", gap: "6px", marginTop: "12px", flexWrap: "wrap" }}>
                 {c.perks.skyClub && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Sky Club</span>}
                 {c.perks.centurion && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Centurion</span>}
+                {c.perks.priorityPass && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Priority Pass</span>}
                 {c.perks.companionCert && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Companion Cert</span>}
                 {c.perks.resyCredit && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>Resy Credit</span>}
                 {c.mqd.headstart > 0 && <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "4px", background: `${c.accent}20`, color: c.accent, fontFamily: "'IBM Plex Mono', monospace" }}>MQD Boost</span>}
