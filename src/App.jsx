@@ -344,8 +344,8 @@ export default function App() {
     // ── TRAVEL ──
     q.push({
       id: "flights", section: "Your Travel",
-      question: "How many round-trip Delta flights do you take per year?",
-      sub: "Include personal and business travel",
+      question: card.perks.checkedBag ? "How many round-trip Delta flights do you take per year?" : "How many round-trip flights do you take per year?",
+      sub: card.perks.checkedBag ? "Include personal and business travel" : "Include all airlines — this helps us estimate lounge usage",
       type: "choice",
       options: [
         { label: "1–3 flights", value: 2 },
@@ -369,7 +369,7 @@ export default function App() {
       });
     }
 
-    q.push({
+    if (card.perks.checkedBag) { q.push({
       id: "companions", section: "Your Travel",
       question: "How many people typically travel with you on the same reservation?",
       sub: "They get free checked bags too",
@@ -380,7 +380,7 @@ export default function App() {
         { label: "2–3", value: 2.5 },
         { label: "4+", value: 4 },
       ],
-    });
+    }); }
 
     // ── AIRPORTS (for lounge cards) ──
     if (card.perks.skyClub) {
