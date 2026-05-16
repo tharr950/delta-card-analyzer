@@ -355,7 +355,7 @@ export default function App() {
       ],
     });
 
-    q.push({
+    if (card.perks.checkedBag) { q.push({
       id: "checkedBags", section: "Your Travel",
       question: "Do you typically check a bag when you fly?",
       sub: "This card gives you and up to 8 companions a free first checked bag ($45 value each way)",
@@ -525,7 +525,7 @@ export default function App() {
     });
 
     // ── DELTA STAYS ──
-    q.push({
+    if (card.perks.staysCredit) { q.push({
       id: "deltaStays", section: "Dining & Lifestyle",
       question: "Would you book hotels through Delta Stays?",
       sub: `You get a ${fmt(card.perks.staysCredit)} annual credit. Delta Stays earns MQDs and SkyMiles on hotel bookings.`,
@@ -535,7 +535,7 @@ export default function App() {
         { label: "Maybe for some trips", value: "maybe" },
         { label: "No — I'm loyal to hotel programs", value: "no" },
       ],
-    });
+    }); }
 
     // ── GOLD FLIGHT CREDIT ──
     if (card.perks.flightCredit) {
